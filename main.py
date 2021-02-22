@@ -1,4 +1,4 @@
-import pygame
+import pygame, random
 
 # Game settings
 rows = 6
@@ -11,6 +11,8 @@ blue = (23, 93, 222)
 yellow = (255, 240, 0)
 red = (255, 0, 0)
 background = (19, 72, 162)
+black = (0, 0, 0)
+white = (255, 255, 255)
 
 # Pygame config
 pygame.init()
@@ -18,10 +20,22 @@ icon = pygame.image.load("icon.png")
 pygame.display.set_icon(icon)
 pygame.display.set_caption("Connect Four")
 screen = pygame.display.set_mode([cols*square_size, rows*square_size])
+font = pygame.font.SysFont(None, 80)
 
-# Game info
+# Game state
 board = [[0 for r in range(rows)] for c in range(cols)]
-turn = 1
+turn = random.randint(1, 2)
+won = None
+
+
+def reset_game():
+	"""
+	Resets the game state (board and variables)
+	"""
+	global board, turn, won
+	board = [[0 for r in range(rows)] for c in range(cols)]
+	turn = random.randint(1, 2)
+	won = None
 
 
 def draw_board():
@@ -44,35 +58,124 @@ def draw_board():
 			pygame.draw.circle(screen, colour, (c*square_size + square_size/2, rows*square_size - r*square_size - square_size/2), int(disc_size_ratio * square_size/2))
 
 
+def draw_win_message():
+	"""
+	Displays win message on top of the board
+	"""
+	if won is not None:
+		if won == 1:
+			img = font.render("Yellow won", True, black, yellow)
+		elif won == 2:
+			img = font.render("Red won", True, white, red)
+		else:
+			img = font.render("Stalemate", True, white, blue)
+
+		rect = img.get_rect()
+		rect.center = ((cols * square_size)//2, (rows * square_size)//2)
+
+		screen.blit(img, rect)
+
+
 def place(c):
 	"""
 	Tries to place the playing colour on the cth column
 	:param c: column to place on
 	:return: True if placed, False if not placeable
 	"""
-	global turn
+	global turn, won
 
 	for r in range(rows):
 		if board[c][r] == 0:
 			board[c][r] = turn
-			if turn == 1:
-				turn = 2
+
+			won = check_win(c, r)
+			if won is None:
+				if turn == 1:
+					turn = 2
+				else:
+					turn = 1
 			else:
-				turn = 1
+				print(won)
 			return True
 	return False
 
 
+def check_win(c, r):
+	"""
+	Checks for win/stalemate from newly added disc
+	:param c: co
+	:param r:
+	:return: True if game is won by most recent player
+	"""
+	min_col = max(c-3, 0)
+	max_col = min(c+3, cols-1)
+	min_row = max(r - 3, 0)
+	max_row = min(r + 3, rows - 1)
+
+	# Horizontal check
+	count = 0
+	for ci in range(min_col, max_col + 1):
+		if board[ci][r] == turn:
+			count += 1
+		else:
+			count = 0
+		if count == 4:
+			return turn
+
+	# Vertical check
+	count = 0
+	for ri in range(min_row, max_row + 1):
+		if board[c][ri] == turn:
+			count += 1
+		else:
+			count = 0
+		if count == 4:
+			return turn
+
+	count1 = 0
+	count2 = 0
+	# Diagonal check
+	for i in range(-3, 4):
+		# bottom-left -> top-right
+		if 0 <= c + i < cols and 0 <= r + i < rows:
+			if board[c + i][r + i] == turn:
+				count1 += 1
+			else:
+				count1 = 0
+			if count1 == 4:
+				return turn
+		# bottom-right -> top-let
+		if 0 <= c + i < cols and 0 <= r - i < rows:
+			if board[c + i][r - i] == turn:
+				count2 += 1
+			else:
+				count2 = 0
+			if count2 == 4:
+				return turn
+
+	# Stalemate check
+	if sum([x.count(0) for x in board]) == 0:
+		return 0
+
+	return None
+
+
 if __name__ == '__main__':
+	reset_game()
+
 	running = True
 	while running:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				running = False
 			if event.type == pygame.MOUSEBUTTONUP:
-				place(pygame.mouse.get_pos()[0]//square_size)
+				if won is None:
+					place(pygame.mouse.get_pos()[0]//square_size)
+				else:
+					reset_game()
 
 		draw_board()
+		draw_win_message()
 
 		pygame.display.update()
 
