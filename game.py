@@ -38,44 +38,6 @@ def reset_game():
 	won = None
 
 
-def draw_board():
-	"""
-	Draws board[c][r] with c = 0 and r = 0 being bottom left
-	0 = empty (background colour)
-	1 = yellow
-	2 = red
-	"""
-	screen.fill(blue)
-
-	for r in range(rows):
-		for c in range(cols):
-			colour = background
-			if board[c][r] == 1:
-				colour = yellow
-			if board[c][r] == 2:
-				colour = red
-
-			pygame.draw.circle(screen, colour, (c*square_size + square_size/2, rows*square_size - r*square_size - square_size/2), int(disc_size_ratio * square_size/2))
-
-
-def draw_win_message():
-	"""
-	Displays win message on top of the board
-	"""
-	if won is not None:
-		if won == 1:
-			img = font.render("Yellow won", True, black, yellow)
-		elif won == 2:
-			img = font.render("Red won", True, white, red)
-		else:
-			img = font.render("Stalemate", True, white, blue)
-
-		rect = img.get_rect()
-		rect.center = ((cols * square_size)//2, (rows * square_size)//2)
-
-		screen.blit(img, rect)
-
-
 def place(c):
 	"""
 	Tries to place the playing colour on the cth column
@@ -94,15 +56,13 @@ def place(c):
 					turn = 2
 				else:
 					turn = 1
-			else:
-				print(won)
 			return True
 	return False
 
 
 def check_win(c, r):
 	"""
-	Checks for win/stalemate from newly added disc
+	Checks for win/draw from newly added disc
 	:param c: co
 	:param r:
 	:return: True if game is won by most recent player
@@ -153,11 +113,59 @@ def check_win(c, r):
 			if count2 == 4:
 				return turn
 
-	# Stalemate check
+	# Draw check
 	if sum([x.count(0) for x in board]) == 0:
 		return 0
 
 	return None
+
+
+def draw_board():
+	"""
+	Draws board[c][r] with c = 0 and r = 0 being bottom left
+	0 = empty (background colour)
+	1 = yellow
+	2 = red
+	"""
+	screen.fill(blue)
+
+	for r in range(rows):
+		for c in range(cols):
+			colour = background
+			if board[c][r] == 1:
+				colour = yellow
+			if board[c][r] == 2:
+				colour = red
+
+			pygame.draw.circle(screen, colour, (c*square_size + square_size/2, rows*square_size - r*square_size - square_size/2), int(disc_size_ratio * square_size/2))
+
+
+def draw_win_message():
+	"""
+	Displays win message on top of the board
+	"""
+	if won is not None:
+		if won == 1:
+			img = font.render("Yellow won", True, black, yellow)
+		elif won == 2:
+			img = font.render("Red won", True, white, red)
+		else:
+			img = font.render("Stalemate", True, white, blue)
+
+		rect = img.get_rect()
+		rect.center = ((cols * square_size)//2, (rows * square_size)//2)
+
+		screen.blit(img, rect)
+
+
+def update_view():
+	"""
+	Updates the pygame view with correct board
+	"""
+	draw_board()
+	draw_win_message()
+
+	pygame.display.update()
 
 
 if __name__ == '__main__':
@@ -174,9 +182,6 @@ if __name__ == '__main__':
 				else:
 					reset_game()
 
-		draw_board()
-		draw_win_message()
-
-		pygame.display.update()
+		update_view()
 
 	pygame.quit()
