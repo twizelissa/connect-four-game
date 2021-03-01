@@ -1,4 +1,5 @@
-import pygame, random
+import pygame
+import random
 
 # Game settings
 rows = 6
