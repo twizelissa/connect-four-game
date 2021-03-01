@@ -150,7 +150,7 @@ def draw_win_message():
 		elif won == 2:
 			img = font.render("Red won", True, white, red)
 		else:
-			img = font.render("Stalemate", True, white, blue)
+			img = font.render("Draw", True, white, blue)
 
 		rect = img.get_rect()
 		rect.center = ((cols * square_size)//2, (rows * square_size)//2)
