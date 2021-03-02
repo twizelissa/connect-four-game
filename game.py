@@ -138,7 +138,7 @@ def draw_board():
 			if board[c][r] == 2:
 				colour = red
 
-			pygame.draw.circle(screen, colour, (c*square_size + square_size/2, rows*square_size - r*square_size - square_size/2), int(disc_size_ratio * square_size/2))
+			pygame.draw.circle(screen, colour, (c*square_size + square_size//2, rows*square_size - r*square_size - square_size//2), int(disc_size_ratio * square_size/2))
 
 
 def draw_win_message():
