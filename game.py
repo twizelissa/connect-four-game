@@ -183,7 +183,7 @@ if __name__ == '__main__':
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				running = False
-			if event.type == pygame.MOUSEBUTTONUP:
+			if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
 				if won is None:
 					place(pygame.mouse.get_pos()[0]//square_size)
 				else:
