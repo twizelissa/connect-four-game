@@ -21,8 +21,17 @@ pygame.init()
 icon = pygame.image.load("icon.png")
 pygame.display.set_icon(icon)
 pygame.display.set_caption("Connect Four")
-screen = pygame.display.set_mode([cols*square_size, rows*square_size])
 font = pygame.font.SysFont(None, 80)
+screen = None
+
+
+def init():
+	"""
+	Initialises the view window
+	"""
+	global screen
+	screen = pygame.display.set_mode([cols*square_size, rows*square_size])
+
 
 # Game state
 board = [[0 for r in range(rows)] for c in range(cols)]
@@ -35,7 +44,7 @@ def reset_game():
 	Resets the game state (board and variables)
 	"""
 	global board, turn, won
-	board = [[0 for r in range(rows)] for c in range(cols)]
+	board = [[0 for _ in range(rows)] for _ in range(cols)]
 	turn = random.randint(1, 2)
 	won = None
 
@@ -44,7 +53,7 @@ def place(c):
 	"""
 	Tries to place the playing colour on the cth column
 	:param c: column to place on
-	:return: True if placed, False if not placeable
+	:return: position of placed colour or None if not placeable
 	"""
 	global turn, won
 
@@ -52,23 +61,26 @@ def place(c):
 		if board[c][r] == 0:
 			board[c][r] = turn
 
-			won = check_win(c, r)
-			if won is None:
-				if turn == 1:
-					turn = 2
-				else:
-					turn = 1
-			return True
-	return False
+			if turn == 1:
+				turn = 2
+			else:
+				turn = 1
+			return c, r
+	return None
 
 
-def check_win(c, r):
+def check_win(pos):
 	"""
 	Checks for win/draw from newly added disc
-	:param c: co
-	:param r:
-	:return: True if game is won by most recent player
+	:param pos: position from which to check the win
+	:return: player number if a win occurs, 0 if a draw occurs, None otherwise
 	"""
+	global won
+
+	c = pos[0]
+	r = pos[1]
+	player = board[c][r]
+
 	min_col = max(c-3, 0)
 	max_col = min(c+3, cols-1)
 	min_row = max(r - 3, 0)
@@ -77,22 +89,25 @@ def check_win(c, r):
 	# Horizontal check
 	count = 0
 	for ci in range(min_col, max_col + 1):
-		if board[ci][r] == turn:
+		if board[ci][r] == player:
 			count += 1
 		else:
 			count = 0
+		count
 		if count == 4:
-			return turn
+			won = player
+			return won
 
 	# Vertical check
 	count = 0
 	for ri in range(min_row, max_row + 1):
-		if board[c][ri] == turn:
+		if board[c][ri] == player:
 			count += 1
 		else:
 			count = 0
 		if count == 4:
-			return turn
+			won = player
+			return won
 
 	count1 = 0
 	count2 = 0
@@ -100,26 +115,30 @@ def check_win(c, r):
 	for i in range(-3, 4):
 		# bottom-left -> top-right
 		if 0 <= c + i < cols and 0 <= r + i < rows:
-			if board[c + i][r + i] == turn:
+			if board[c + i][r + i] == player:
 				count1 += 1
 			else:
 				count1 = 0
 			if count1 == 4:
-				return turn
+				won = player
+				return won
 		# bottom-right -> top-let
 		if 0 <= c + i < cols and 0 <= r - i < rows:
-			if board[c + i][r - i] == turn:
+			if board[c + i][r - i] == player:
 				count2 += 1
 			else:
 				count2 = 0
 			if count2 == 4:
-				return turn
+				won = player
+				return won
 
 	# Draw check
 	if sum([x.count(0) for x in board]) == 0:
-		return 0
+		won = 0
+		return won
 
-	return None
+	won = None
+	return won
 
 
 def draw_board():
@@ -176,6 +195,7 @@ def update_view():
 
 
 if __name__ == '__main__':
+	init()
 	reset_game()
 
 	running = True
@@ -185,7 +205,7 @@ if __name__ == '__main__':
 				running = False
 			if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
 				if won is None:
-					place(pygame.mouse.get_pos()[0]//square_size)
+					check_win(place(pygame.mouse.get_pos()[0]//square_size))
 				else:
 					reset_game()
 
