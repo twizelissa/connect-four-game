@@ -93,7 +93,6 @@ def check_win(pos):
 			count += 1
 		else:
 			count = 0
-		count
 		if count == 4:
 			won = player
 			return won
