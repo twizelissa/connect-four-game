@@ -185,6 +185,12 @@ class Connect4Game(Observable):
 		"""
 		return self._turn
 
+	def get_board(self):
+		"""
+		:return: A copy of the game board
+		"""
+		return self._board.copy()
+
 	def board_at(self, c, r):
 		"""
 		:param: c, the column
