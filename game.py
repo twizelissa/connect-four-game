@@ -179,6 +179,12 @@ class Connect4Game(Observable):
 		"""
 		return self._won
 
+	def get_turn(self):
+		"""
+		:return: To which player is the turn
+		"""
+		return self._turn
+
 	def board_at(self, c, r):
 		"""
 		:param: c, the column
