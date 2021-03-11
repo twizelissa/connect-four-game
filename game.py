@@ -1,201 +1,289 @@
 import pygame
 import pygame.gfxdraw
 import random
+import enum
 
-# Game settings
-rows = 6
-cols = 7
-square_size = 100
-disc_size_ratio = 0.8
+# Graphical size settings
+SQUARE_SIZE = 100
+DISC_SIZE_RATIO = 0.8
 
 # Colours
-blue = (23, 93, 222)
-yellow = (255, 240, 0)
-red = (255, 0, 0)
-background = (19, 72, 162)
-black = (0, 0, 0)
-white = (255, 255, 255)
-
-# Pygame config
-pygame.init()
-icon = pygame.image.load("icon.png")
-pygame.display.set_icon(icon)
-pygame.display.set_caption("Connect Four")
-font = pygame.font.SysFont(None, 80)
-screen = None
+BLUE_COLOR = (23, 93, 222)
+YELLOW_COLOR = (255, 240, 0)
+RED_COLOR = (255, 0, 0)
+BACKGROUND_COLOR = (19, 72, 162)
+BLACK_COLOR = (0, 0, 0)
+WHITE_COLOR = (255, 255, 255)
 
 
-def init():
-	"""
-	Initialises the view window
-	"""
-	global screen
-	screen = pygame.display.set_mode([cols*square_size, rows*square_size])
+class Event(enum.Enum):
+	PIECE_PLACED = 1
+	GAME_WON = 2
+	GAME_RESET = 3
 
 
-# Game state
-board = [[0 for r in range(rows)] for c in range(cols)]
-turn = random.randint(1, 2)
-won = None
+class Observer:
+
+	def __init__(self):
+		pass
+
+	def update(self, obj, event, *argv):
+		pass
 
 
-def reset_game():
-	"""
-	Resets the game state (board and variables)
-	"""
-	global board, turn, won
-	board = [[0 for _ in range(rows)] for _ in range(cols)]
-	turn = random.randint(1, 2)
-	won = None
+class Observable:
+
+	def __init__(self):
+		self._observers = []
+
+	def notify(self, event, *argv):
+		for obs in self._observers:
+			obs.update(self, event, *argv)
+
+	def add_observer(self, obs):
+		self._observers.append(obs)
+
+	def remove_observer(self, obs):
+		if obs in self._observers:
+			self._observers.remove(obs)
 
 
-def place(c):
-	"""
-	Tries to place the playing colour on the cth column
-	:param c: column to place on
-	:return: position of placed colour or None if not placeable
-	"""
-	global turn, won
+class Connect4Game(Observable):
 
-	for r in range(rows):
-		if board[c][r] == 0:
-			board[c][r] = turn
+	def __init__(self, rows=6, cols=7):
+		super().__init__()
+		self._rows = rows
+		self._cols = cols
+		self._board = None
+		self._turn = None
+		self._won = None
+		self.reset_game()
 
-			if turn == 1:
-				turn = 2
+	def reset_game(self):
+		"""
+		Resets the game state (board and variables)
+		"""
+		self._board = [[0 for _ in range(self._rows)] for _ in range(self._cols)]
+		self._turn = random.randint(1, 2)
+		self._won = None
+		self.notify(Event.GAME_RESET)
+
+	def place(self, c):
+		"""
+		Tries to place the playing colour on the cth column
+		:param c: column to place on
+		:return: position of placed colour or None if not placeable
+		"""
+		for r in range(self._rows):
+			if self._board[c][r] == 0:
+				self._board[c][r] = self._turn
+
+				if self._turn == 1:
+					self._turn = 2
+				else:
+					self._turn = 1
+
+				self.notify(Event.PIECE_PLACED, (c, r))
+				self.check_win((c, r))
+				return c, r
+		return None
+
+	def check_win(self, pos):
+		"""
+		Checks for win/draw from newly added disc
+		:param pos: position from which to check the win
+		:return: player number if a win occurs, 0 if a draw occurs, None otherwise
+		"""
+		c = pos[0]
+		r = pos[1]
+		player = self._board[c][r]
+
+		min_col = max(c-3, 0)
+		max_col = min(c+3, self._cols-1)
+		min_row = max(r - 3, 0)
+		max_row = min(r + 3, self._rows - 1)
+
+		# Horizontal check
+		count = 0
+		for ci in range(min_col, max_col + 1):
+			if self._board[ci][r] == player:
+				count += 1
 			else:
-				turn = 1
-			return c, r
-	return None
+				count = 0
+			if count == 4:
+				self._won = player
+				self.notify(Event.GAME_WON, self._won)
+				return self._won
 
-
-def check_win(pos):
-	"""
-	Checks for win/draw from newly added disc
-	:param pos: position from which to check the win
-	:return: player number if a win occurs, 0 if a draw occurs, None otherwise
-	"""
-	global won
-
-	c = pos[0]
-	r = pos[1]
-	player = board[c][r]
-
-	min_col = max(c-3, 0)
-	max_col = min(c+3, cols-1)
-	min_row = max(r - 3, 0)
-	max_row = min(r + 3, rows - 1)
-
-	# Horizontal check
-	count = 0
-	for ci in range(min_col, max_col + 1):
-		if board[ci][r] == player:
-			count += 1
-		else:
-			count = 0
-		if count == 4:
-			won = player
-			return won
-
-	# Vertical check
-	count = 0
-	for ri in range(min_row, max_row + 1):
-		if board[c][ri] == player:
-			count += 1
-		else:
-			count = 0
-		if count == 4:
-			won = player
-			return won
-
-	count1 = 0
-	count2 = 0
-	# Diagonal check
-	for i in range(-3, 4):
-		# bottom-left -> top-right
-		if 0 <= c + i < cols and 0 <= r + i < rows:
-			if board[c + i][r + i] == player:
-				count1 += 1
+		# Vertical check
+		count = 0
+		for ri in range(min_row, max_row + 1):
+			if self._board[c][ri] == player:
+				count += 1
 			else:
-				count1 = 0
-			if count1 == 4:
-				won = player
-				return won
-		# bottom-right -> top-let
-		if 0 <= c + i < cols and 0 <= r - i < rows:
-			if board[c + i][r - i] == player:
-				count2 += 1
-			else:
-				count2 = 0
-			if count2 == 4:
-				won = player
-				return won
+				count = 0
+			if count == 4:
+				self._won = player
+				self.notify(Event.GAME_WON, self._won)
+				return self._won
 
-	# Draw check
-	if sum([x.count(0) for x in board]) == 0:
-		won = 0
-		return won
+		count1 = 0
+		count2 = 0
+		# Diagonal check
+		for i in range(-3, 4):
+			# bottom-left -> top-right
+			if 0 <= c + i < self._cols and 0 <= r + i < self._rows:
+				if self._board[c + i][r + i] == player:
+					count1 += 1
+				else:
+					count1 = 0
+				if count1 == 4:
+					self._won = player
+					self.notify(Event.GAME_WON, self._won)
+					return self._won
+			# bottom-right -> top-let
+			if 0 <= c + i < self._cols and 0 <= r - i < self._rows:
+				if self._board[c + i][r - i] == player:
+					count2 += 1
+				else:
+					count2 = 0
+				if count2 == 4:
+					self._won = player
+					self.notify(Event.GAME_WON, self._won)
+					return self._won
 
-	won = None
-	return won
+		# Draw check
+		if sum([x.count(0) for x in self._board]) == 0:
+			self._won = 0
+			self.notify(Event.GAME_WON, self._won)
+			return self._won
+
+		self._won = None
+		return self._won
+
+	def get_cols(self):
+		"""
+		:return: The number of columns of the game
+		"""
+		return self._cols
+
+	def get_rows(self):
+		"""
+		:return: The number of rows of the game
+		"""
+		return self._rows
+
+	def get_win(self):
+		"""
+		:return: If one play won or not
+		"""
+		return self._won
+
+	def board_at(self, c, r):
+		"""
+		:param: c, the column
+		:param: r, the row
+		:return: What value is held at column c, row r in the board
+		"""
+		return self._board[c][r]
+
+	def copy_state(self):
+		"""
+		Use this instead of the copy() method. Useful as we don't want our graphical interface (viewed as an Observer in this class)
+		to be updated when we are playing moves in our tree search.
+		"""
+		new_one = self.copy()
+		new_one._observers.clear()  # Clear observers, such as GUI in our case.
+		return new_one
 
 
-def draw_board():
-	"""
-	Draws board[c][r] with c = 0 and r = 0 being bottom left
-	0 = empty (background colour)
-	1 = yellow
-	2 = red
-	"""
-	screen.fill(blue)
+class Connect4Viewer(Observer):
 
-	for r in range(rows):
-		for c in range(cols):
-			colour = background
-			if board[c][r] == 1:
-				colour = yellow
-			if board[c][r] == 2:
-				colour = red
+	def __init__(self, game):
+		super(Observer, self).__init__()
+		assert game is not None
+		self._game = game
+		self._game.add_observer(self)
+		self._screen = None
+		self._font = None
 
-			# Classical non anti-aliased circle drawing
-			# pygame.draw.circle(screen, colour, (c*square_size + square_size//2, rows*square_size - r*square_size - square_size//2), int(disc_size_ratio * square_size/2))
+	def initialize(self):
+		"""
+		Initialises the view window
+		"""
+		pygame.init()
+		icon = pygame.image.load("icon.png")
+		pygame.display.set_icon(icon)
+		pygame.display.set_caption("Connect Four")
+		self._font = pygame.font.SysFont(None, 80)
+		self._screen = pygame.display.set_mode([self._game.get_cols() * SQUARE_SIZE, self._game.get_rows() * SQUARE_SIZE])
+		self.draw_board()
 
-			# Anti-aliased circle drawing
-			pygame.gfxdraw.aacircle(screen, c*square_size + square_size//2, rows*square_size - r*square_size - square_size//2, int(disc_size_ratio * square_size/2), colour)
-			pygame.gfxdraw.filled_circle(screen, c*square_size + square_size//2, rows*square_size - r*square_size - square_size//2, int(disc_size_ratio * square_size/2), colour)
+	def draw_board(self):
+		"""
+		Draws board[c][r] with c = 0 and r = 0 being bottom left
+		0 = empty (background colour)
+		1 = yellow
+		2 = red
+		"""
+		self._screen.fill(BLUE_COLOR)
 
+		for r in range(self._game.get_rows()):
+			for c in range(self._game.get_cols()):
+				colour = BACKGROUND_COLOR
+				if self._game.board_at(c, r) == 1:
+					colour = YELLOW_COLOR
+				if self._game.board_at(c, r) == 2:
+					colour = RED_COLOR
 
-def draw_win_message():
-	"""
-	Displays win message on top of the board
-	"""
-	if won is not None:
+				# Anti-aliased circle drawing
+				pygame.gfxdraw.aacircle(self._screen, c * SQUARE_SIZE + SQUARE_SIZE // 2,
+										self._game.get_rows() * SQUARE_SIZE - r * SQUARE_SIZE - SQUARE_SIZE // 2,
+										int(DISC_SIZE_RATIO * SQUARE_SIZE / 2),
+										colour)
+
+				pygame.gfxdraw.filled_circle(self._screen, c * SQUARE_SIZE + SQUARE_SIZE // 2,
+											 self._game.get_rows() * SQUARE_SIZE - r * SQUARE_SIZE - SQUARE_SIZE // 2,
+											 int(DISC_SIZE_RATIO * SQUARE_SIZE / 2),
+											 colour)
+		pygame.display.update()
+
+	def update(self, obj, event, *argv):
+		"""
+		Called when notified. Updates the view.
+		"""
+		if event == Event.GAME_WON:
+			won = argv[0]
+			self.draw_win_message(won)
+		elif event == Event.GAME_RESET:
+			self.draw_board()
+		elif event == Event.PIECE_PLACED:
+			self.draw_board()
+
+	def draw_win_message(self, won):
+		"""
+		Displays win message on top of the board
+		"""
 		if won == 1:
-			img = font.render("Yellow won", True, black, yellow)
+			img = self._font.render("Yellow won", True, BLACK_COLOR, YELLOW_COLOR)
 		elif won == 2:
-			img = font.render("Red won", True, white, red)
+			img = self._font.render("Red won", True, WHITE_COLOR, RED_COLOR)
 		else:
-			img = font.render("Draw", True, white, blue)
+			img = self._font.render("Draw", True, WHITE_COLOR, BLUE_COLOR)
 
 		rect = img.get_rect()
-		rect.center = ((cols * square_size)//2, (rows * square_size)//2)
+		rect.center = ((self._game.get_cols() * SQUARE_SIZE) // 2, (self._game.get_rows() * SQUARE_SIZE) // 2)
 
-		screen.blit(img, rect)
-
-
-def update_view():
-	"""
-	Updates the pygame view with correct board
-	"""
-	draw_board()
-	draw_win_message()
-
-	pygame.display.update()
+		self._screen.blit(img, rect)
+		pygame.display.update()
 
 
 if __name__ == '__main__':
-	init()
-	reset_game()
+	game = Connect4Game()
+	game.reset_game()
+
+	view = Connect4Viewer(game=game)
+	view.initialize()
 
 	running = True
 	while running:
@@ -203,11 +291,9 @@ if __name__ == '__main__':
 			if event.type == pygame.QUIT:
 				running = False
 			if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-				if won is None:
-					check_win(place(pygame.mouse.get_pos()[0]//square_size))
+				if game.get_win() is None:
+					game.place(pygame.mouse.get_pos()[0] // SQUARE_SIZE)
 				else:
-					reset_game()
-
-		update_view()
+					game.reset_game()
 
 	pygame.quit()
