@@ -2,6 +2,7 @@ import pygame
 import pygame.gfxdraw
 import random
 import enum
+from copy import deepcopy
 
 # Graphical size settings
 SQUARE_SIZE = 100
@@ -204,8 +205,17 @@ class Connect4Game(Observable):
 		Use this instead of the copy() method. Useful as we don't want our graphical interface (viewed as an Observer in this class)
 		to be updated when we are playing moves in our tree search.
 		"""
-		new_one = self.copy()
+
+		# Temporary removes the
+		temporary_observers = self._observers
+		self._observers = []
+
+		new_one = deepcopy(self)
 		new_one._observers.clear()  # Clear observers, such as GUI in our case.
+
+		# Reassign the observers after deepcopy
+		self._observers = temporary_observers
+
 		return new_one
 
 
