@@ -190,7 +190,7 @@ class Connect4Game(Observable):
 		"""
 		:return: A copy of the game board
 		"""
-		return self._board.copy()
+		return self._board
 
 	def board_at(self, c, r):
 		"""
