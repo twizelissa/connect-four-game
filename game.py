@@ -3,6 +3,7 @@ import pygame.gfxdraw
 import random
 import enum
 from copy import deepcopy
+import os
 
 # Graphical size settings
 SQUARE_SIZE = 100
@@ -234,7 +235,7 @@ class Connect4Viewer(Observer):
 		Initialises the view window
 		"""
 		pygame.init()
-		icon = pygame.image.load("icon.png")
+		icon = pygame.image.load(f"{os.path.dirname(__file__)}/icon.png")
 		pygame.display.set_icon(icon)
 		pygame.display.set_caption("Connect Four")
 		self._font = pygame.font.SysFont(None, 80)
