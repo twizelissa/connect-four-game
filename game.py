@@ -235,7 +235,7 @@ class Connect4Viewer(Observer):
 		Initialises the view window
 		"""
 		pygame.init()
-		icon = pygame.image.load(f"{os.path.dirname(__file__)}/icon.png")
+		icon = pygame.image.load(f"{os.path.dirname(__file__)}icon.png")
 		pygame.display.set_icon(icon)
 		pygame.display.set_caption("Connect Four")
 		self._font = pygame.font.SysFont(None, 80)
