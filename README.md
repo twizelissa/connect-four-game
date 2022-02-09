@@ -1,13 +1,18 @@
-# Connect Four game in Python
+#Backdoor Program Using python connect-4 game in Network security
 
-Simple Python 3 Connect Four game using the `pygame` library
+## Futures
+Allow Attacker to enter into pc of target by running  game
+ 
+First install pygame using `sudo apt-get install python-pygame`
 
 ## Playing
 
-First player is chosen randomly, clicking on one column will place a disc if possible. If win/draw occurs, a message is displayed, clicking again restarts the game
+1.First player is chosen randomly 
+2.clicking on one column will place a disc if possible.
+3.If win/draw occurs, a message is displayed.
+4.clicking again restarts the game
 
-These actions can also be performed programmatically using the corresponding functions
 
 ## Screenshot
 
-![Connect Four screenshot](screenshot.png)
+![connect-4 screenshot](screenshot.png)
